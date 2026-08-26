@@ -40,6 +40,23 @@ Write-Host "   OpenKiosco - Iniciando..."    -ForegroundColor Green
 Write-Host "================================" -ForegroundColor Green
 Write-Host ""
 
+function KillPort([int]$port) {
+    try {
+        $conns = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
+        if ($conns) {
+            foreach ($c in $conns) {
+                if ($c.OwningProcess -gt 0) {
+                    & taskkill /PID $c.OwningProcess /T /F 2>$null | Out-Null
+                }
+            }
+        }
+    } catch {}
+}
+
+# Limpiar instancias previas en los puertos 3000 y 5173
+KillPort 3000
+KillPort 5173
+
 if (-not (Test-Path "$Root\node_modules")) {
     Write-Host "[1/4] Primera vez: instalando dependencias (puede tardar varios minutos)..."
     npm install --no-audit --no-fund
@@ -48,17 +65,17 @@ if (-not (Test-Path "$Root\node_modules")) {
     Write-Host "[1/4] Dependencias OK"
 }
 
-if (-not (Test-Path "$Root\apps\api\prisma\dev.db")) {
-    Write-Host "[2/4] Preparando base de datos por primera vez..."
-    Push-Location "$Root\apps\api"
+Write-Host "[2/4] Verificando migraciones de base de datos..."
+Push-Location "$Root\apps\api"
+try {
     npx prisma migrate deploy
-    if ($LASTEXITCODE -ne 0) { Pop-Location; Fail "La migracion de la base de datos fallo." }
-    npx tsx prisma/seed.ts
-    if ($LASTEXITCODE -ne 0) { Pop-Location; Fail "El seed fallo." }
-    Pop-Location
-} else {
-    Write-Host "[2/4] Base de datos OK"
+    if (-not (Test-Path "$Root\apps\api\prisma\dev.db")) {
+        npx tsx prisma/seed.ts
+    }
+} catch {
+    Write-Host "Aviso: no se pudo ejecutar la migracion automatica." -ForegroundColor Yellow
 }
+Pop-Location
 
 Write-Host "[3/4] Iniciando servidores en segundo plano..."
 

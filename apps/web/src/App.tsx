@@ -6,6 +6,7 @@ import LoginPage from "@/pages/LoginPage"
 import POSPage from "@/pages/POSPage"
 import CustomersPage from "@/pages/CustomersPage"
 import InventoryPage from "@/pages/InventoryPage"
+import SuppliersPage from "@/pages/SuppliersPage"
 import ReportsPage from "@/pages/ReportsPage"
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/" element={<POSPage />} />
           <Route path="/fiados" element={<CustomersPage />} />
           <Route path="/stock" element={<InventoryPage />} />
+          <Route path="/proveedores" element={<SuppliersPage />} />
           <Route path="/reportes" element={<ReportsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

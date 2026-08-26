@@ -1,8 +1,9 @@
 import { useCallback, useRef, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { Layers, Tag } from "lucide-react"
 import { toast } from "sonner"
 import { api } from "@/lib/api"
-import type { Product, Shift } from "@/lib/types"
+import type { Category, Product, Shift } from "@/lib/types"
 import { useCartStore } from "@/stores/cart"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner"
@@ -37,14 +38,24 @@ function PosTerminal({ shift }: { shift: Shift }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [cashMoveOpen, setCashMoveOpen] = useState(false)
   const [rawQuery, setRawQuery] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [qtyPrefix, setQtyPrefix] = useState<number | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const debouncedQuery = useDebounce(rawQuery, 200)
 
+  const catsQ = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => api.get<{ categories: Category[] }>("/categories"),
+  })
+
   const productsQ = useQuery({
-    queryKey: ["products", "search", debouncedQuery],
-    queryFn: () =>
-      api.get<{ products: Product[] }>(`/products/search?q=${encodeURIComponent(debouncedQuery)}`),
+    queryKey: ["products", "search", debouncedQuery, selectedCategory],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (debouncedQuery) params.set("q", debouncedQuery)
+      if (selectedCategory) params.set("categoryId", selectedCategory)
+      return api.get<{ products: Product[] }>(`/products/search?${params.toString()}`)
+    },
     staleTime: 10000,
   })
 
@@ -135,6 +146,43 @@ function PosTerminal({ shift }: { shift: Shift }) {
           qtyPrefix={qtyPrefix}
           onClearQty={() => setQtyPrefix(null)}
         />
+
+        {/* Barra de Filtro de Categorías */}
+        {(catsQ.data?.categories?.length ?? 0) > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 shrink-0 no-scrollbar">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition shrink-0 ${
+                selectedCategory === null
+                  ? "bg-emerald-500 text-slate-950 font-semibold shadow-sm"
+                  : "bg-slate-900 border border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+              }`}
+            >
+              <Layers size={13} />
+              Todas
+            </button>
+            {catsQ.data?.categories.map((c) => (
+              <button
+                key={c.id}
+                onClick={() =>
+                  setSelectedCategory(selectedCategory === c.id ? null : c.id)
+                }
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition shrink-0 ${
+                  selectedCategory === c.id
+                    ? "bg-emerald-500 text-slate-950 font-semibold shadow-sm"
+                    : "bg-slate-900 border border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                }`}
+              >
+                <span
+                  className="h-2 w-2 rounded-full shrink-0"
+                  style={{ backgroundColor: c.color || "#10b981" }}
+                />
+                {c.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         <p className="hidden shrink-0 items-center gap-3 text-[11px] text-slate-600 xl:flex">
           <span><kbd className="rounded bg-slate-800 px-1 font-mono">F2</kbd> buscar</span>
           <span><kbd className="rounded bg-slate-800 px-1 font-mono">F4</kbd> caja</span>

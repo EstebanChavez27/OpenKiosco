@@ -6,7 +6,10 @@ import {
   CheckCircle2,
   CreditCard,
   Plus,
+  Printer,
   QrCode,
+  Receipt,
+  UserPlus,
   X,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
@@ -21,6 +24,8 @@ import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Kbd } from "@/components/ui/Kbd"
 import { Modal } from "@/components/ui/Modal"
+import { ReceiptTicketModal } from "./ReceiptTicketModal"
+import { QuickCustomerModal } from "./QuickCustomerModal"
 
 interface PayRow {
   uid: number
@@ -60,7 +65,9 @@ export function CheckoutModal({ open, onClose, onDone }: Props) {
   const [customerId, setCustomerId] = useState<string | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerQ, setPickerQ] = useState("")
+  const [quickCustOpen, setQuickCustOpen] = useState(false)
   const [done, setDone] = useState<{ sale: Sale; change: number } | null>(null)
+  const [ticketModalOpen, setTicketModalOpen] = useState(false)
   const uidRef = useRef(1)
 
   const subtotal = cartSubtotal(items)
@@ -72,7 +79,7 @@ export function CheckoutModal({ open, onClose, onDone }: Props) {
       setPickerOpen(false)
       setPickerQ("")
       setDone(null)
-      setRows([{ uid: uidRef.current++, method: "CASH", amount: total.toFixed(2) }])
+      setRows([{ uid: uidRef.current++, method: "CASH", amount: total > 0 ? total.toFixed(2) : "0.00" }])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -141,6 +148,9 @@ export function CheckoutModal({ open, onClose, onDone }: Props) {
     },
     onSuccess: (data) => {
       setDone({ sale: data.sale, change })
+      clearCart()
+      setRows([{ uid: uidRef.current++, method: "CASH", amount: "0.00" }])
+      setCustomerId(null)
       void qc.invalidateQueries({ queryKey: ["products"] })
       void qc.invalidateQueries({ queryKey: ["shift"] })
       void qc.invalidateQueries({ queryKey: ["customers"] })
@@ -152,8 +162,19 @@ export function CheckoutModal({ open, onClose, onDone }: Props) {
   const finishNewSale = () => {
     clearCart()
     setDone(null)
+    setCustomerId(null)
+    setRows([{ uid: uidRef.current++, method: "CASH", amount: "0.00" }])
     onClose()
     onDone()
+  }
+
+  const handleModalClose = () => {
+    if (done) {
+      finishNewSale()
+    } else {
+      onClose()
+      onDone()
+    }
   }
 
   useEffect(() => {
@@ -209,213 +230,337 @@ export function CheckoutModal({ open, onClose, onDone }: Props) {
   )
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={done ? "Venta completada" : "Cobrar venta"}
-      icon={
-        done ? (
-          <CheckCircle2 size={18} className="text-emerald-400" />
-        ) : (
-          <Banknote size={18} className="text-emerald-400" />
-        )
-      }
-      footer={
-        done ? (
-          <Button variant="primary" onClick={finishNewSale}>
-            Nueva venta <Kbd>Enter</Kbd>
-          </Button>
-        ) : (
-          <>
-            <Button variant="ghost" onClick={onClose}>
-              Cancelar <Kbd>Esc</Kbd>
+    <>
+      <Modal
+        open={open}
+        onClose={handleModalClose}
+        title={done ? "Venta completada" : "Cobrar venta"}
+        icon={
+          done ? (
+            <CheckCircle2 size={18} className="text-emerald-400" />
+          ) : (
+            <Banknote size={18} className="text-emerald-400" />
+          )
+        }
+        footer={
+          done ? (
+            <Button variant="primary" onClick={finishNewSale}>
+              Nueva venta <Kbd>Enter</Kbd>
             </Button>
-            <Button
-              variant="primary"
-              size="lg"
-              disabled={!valid}
-              loading={saleM.isPending}
-              onClick={() => saleM.mutate()}
-            >
-              Cobrar {fmtMoney(total)}
-            </Button>
-          </>
-        )
-      }
-    >
-      {done ? (
-        <div className="flex flex-col items-center gap-4 py-6 text-center">
-          <CheckCircle2 size={56} className="text-emerald-400" />
-          <div>
-            <p className="text-xl font-bold">Venta registrada</p>
-            <p className="mt-1 font-mono text-3xl font-bold text-emerald-400">
-              {fmtMoney(done.sale.total)}
-            </p>
-          </div>
-          {done.change > 0 && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-8 py-3">
-              <p className="text-xs uppercase tracking-wide text-amber-400">Vuelto a entregar</p>
-              <p className="font-mono text-2xl font-bold text-amber-300">{fmtMoney(done.change)}</p>
-            </div>
-          )}
-          <p className="font-mono text-xs text-slate-500">Ticket #{done.sale.id.slice(0, 8)}</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-xl bg-slate-800/60 p-4">
+          ) : (
+            <>
+              <Button variant="ghost" onClick={handleModalClose}>
+                Cancelar <Kbd>Esc</Kbd>
+              </Button>
+              <Button
+                variant="primary"
+                disabled={!valid}
+                loading={saleM.isPending}
+                onClick={() => saleM.mutate()}
+              >
+                Cobrar {fmtMoney(total)}
+              </Button>
+            </>
+          )
+        }
+      >
+        {done ? (
+          <div className="flex flex-col items-center gap-4 py-6 text-center">
+            <CheckCircle2 size={56} className="text-emerald-400" />
             <div>
-              <p className="text-sm font-semibold">{items.reduce((a, i) => a + i.quantity, 0)} artículos</p>
-              {discountPct > 0 && (
-                <p className="text-xs text-amber-400">
-                  Subtotal {fmtMoney(subtotal)} · descuento {discountPct}%
-                </p>
-              )}
+              <p className="text-xl font-bold">Venta registrada</p>
+              <p className="mt-1 font-mono text-3xl font-bold text-emerald-400">
+                {fmtMoney(done.sale.total)}
+              </p>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-wide text-slate-500">Total</p>
-              <p className="font-mono text-2xl font-bold text-emerald-400">{fmtMoney(total)}</p>
-            </div>
-          </div>
+            {done.change > 0 && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-8 py-3">
+                <p className="text-xs uppercase tracking-wide text-amber-400">Vuelto a entregar</p>
+                <p className="font-mono text-2xl font-bold text-amber-300">{fmtMoney(done.change)}</p>
+              </div>
+            )}
 
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {PAYMENT_METHODS.map(({ value, label }) => {
-              const Icon = METHOD_ICONS[value]
-              return (
-                <button
-                  key={value}
-                  onClick={() => addRow(value)}
-                  disabled={value === "ON_ACCOUNT" && hasFiado}
-                  className="flex h-auto flex-col items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/70 py-3 text-[11px] text-slate-300 transition hover:border-slate-500 hover:bg-slate-700 disabled:opacity-30"
-                >
-                  <Icon size={18} className={METHOD_COLORS[value]} />
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-
-          <div className="space-y-2">
-            {rows.map((row) => {
-              const Icon = METHOD_ICONS[row.method]
-              return (
-                <div key={row.uid} className="flex items-center gap-2">
-                  <span className="flex w-32 shrink-0 items-center gap-1.5 text-xs font-medium text-slate-300">
-                    <Icon size={14} className={METHOD_COLORS[row.method]} />
-                    {methodLabel(row.method)}
-                  </span>
-                  <Input
-                    mono
-                    inputMode="decimal"
-                    value={row.amount}
-                    onFocus={(e) => e.target.select()}
-                    onChange={(e) => updateRow(row.uid, { amount: e.target.value.replace(/[^\d.,]/g, "") })}
-                    className="h-9 flex-1"
-                    placeholder="0.00"
-                  />
-                  {row.method !== "CASH" || rows.length > 1 ? (
-                    <button
-                      onClick={() => removeRow(row.uid)}
-                      className="rounded-lg p-1.5 text-slate-600 transition hover:bg-red-500/10 hover:text-red-400"
-                      title="Quitar pago"
-                    >
-                      <X size={15} />
-                    </button>
-                  ) : (
-                    <span className="w-7" />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          {!hasFiado && remaining > 0.005 && (
-            <div className="flex items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
-              <span className="text-sm text-amber-300">
-                Falta <strong className="font-mono">{fmtMoney(remaining)}</strong>
-              </span>
-              <Button size="sm" variant="secondary" onClick={fillRemainingWithCash}>
-                <Plus size={13} /> Completar con efectivo
+            <div className="flex items-center gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTicketModalOpen(true)}
+              >
+                <Printer size={15} /> Imprimir Ticket / PDF
               </Button>
             </div>
-          )}
-          {change > 0 && (
-            <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
-              <span className="text-sm text-emerald-300">Vuelto a entregar</span>
-              <span className="font-mono text-lg font-bold text-emerald-400">{fmtMoney(change)}</span>
-            </div>
-          )}
-          {overLimit && selectedCustomer && (
-            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-              {selectedCustomer.name} superaría su límite de crédito ({fmtMoney(selectedCustomer.creditLimit)}).
-            </p>
-          )}
 
-          {hasFiado && (
-            <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-300">
-                  <BookUser size={14} /> Fiado: {fmtMoney(fiadoAmount)} en cuenta
-                </span>
-                {selectedCustomer ? (
-                  <button
-                    onClick={() => setCustomerId(null)}
-                    className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-xs transition hover:border-red-500/40"
-                  >
-                    {selectedCustomer.name}
-                    <Badge variant={selectedCustomer.balance > 0 ? "amber" : "emerald"}>
-                      {fmtMoney(selectedCustomer.balance)}
-                    </Badge>
-                    <X size={12} className="text-slate-500" />
-                  </button>
-                ) : (
-                  <Button size="sm" variant="outline" onClick={() => setPickerOpen(!pickerOpen)}>
-                    Elegir cliente…
-                  </Button>
+            <p className="font-mono text-xs text-slate-500">Ticket #{done.sale.id.slice(0, 8)}</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-xl bg-slate-800/60 p-4">
+              <div>
+                <p className="text-sm font-semibold">{items.reduce((a, i) => a + i.quantity, 0)} artículos</p>
+                {discountPct > 0 && (
+                  <p className="text-xs text-amber-400">
+                    Subtotal {fmtMoney(subtotal)} · descuento {discountPct}%
+                  </p>
                 )}
               </div>
+              <div className="text-right">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Total a cobrar</p>
+                <p className="font-mono text-2xl font-bold text-emerald-400">{fmtMoney(total)}</p>
+              </div>
+            </div>
 
-              {pickerOpen && !selectedCustomer && (
-                <div className="space-y-2">
-                  <Input
-                    autoFocus
-                    placeholder="Buscar cliente por nombre..."
-                    value={pickerQ}
-                    onChange={(e) => setPickerQ(e.target.value)}
-                    className="h-9"
-                  />
-                  <div className="max-h-40 space-y-1 overflow-y-auto">
-                    {pickerList.map((c) => (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Métodos de pago
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {PAYMENT_METHODS.map(({ value, label }) => {
+                    const Icon = METHOD_ICONS[value]
+                    const disabled = value === "ON_ACCOUNT" && rows.some((r) => r.method === "ON_ACCOUNT")
+                    return (
                       <button
-                        key={c.id}
-                        onClick={() => {
-                          setCustomerId(c.id)
-                          setPickerOpen(false)
-                          setPickerQ("")
-                        }}
-                        className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-slate-800"
+                        key={value}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => addRow(value)}
+                        className={`flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-medium transition hover:border-emerald-500/50 hover:bg-slate-700 disabled:opacity-40`}
                       >
-                        <span>{c.name}</span>
-                        <span className="flex items-center gap-2 text-xs text-slate-500">
-                          {c.phone && <span className="font-mono">{c.phone}</span>}
-                          <Badge variant={c.balance > 0 ? "amber" : "slate"}>
-                            debe {fmtMoney(c.balance)}
-                          </Badge>
-                          <Badge variant={c.creditLimit > 0 ? "indigo" : "slate"}>
-                            límite {c.creditLimit > 0 ? fmtMoney(c.creditLimit) : "sin tope"}
-                          </Badge>
-                        </span>
+                        <Icon size={13} className={METHOD_COLORS[value]} />
+                        {label}
                       </button>
-                    ))}
-                    {pickerList.length === 0 && (
-                      <p className="py-2 text-center text-xs text-slate-500">Sin clientes que coincidan.</p>
-                    )}
-                  </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {rows.map((row) => {
+                  const Icon = METHOD_ICONS[row.method]
+                  return (
+                    <div
+                      key={row.uid}
+                      className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/80 p-2"
+                    >
+                      <div className="flex w-36 items-center gap-1.5 px-2 text-xs font-semibold text-slate-300">
+                        <Icon size={15} className={METHOD_COLORS[row.method]} />
+                        {methodLabel(row.method)}
+                      </div>
+
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-slate-500">
+                          $
+                        </span>
+                        <Input
+                          mono
+                          inputMode="decimal"
+                          value={row.amount}
+                          onChange={(e) =>
+                            updateRow(row.uid, {
+                              amount: e.target.value.replace(/[^\d.,]/g, ""),
+                            })
+                          }
+                          className="h-10 pl-6 text-right font-mono text-base font-semibold"
+                        />
+                      </div>
+
+                      {rows.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeRow(row.uid)}
+                          className="rounded-lg p-2 text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-1">
+                <span className="text-slate-500">Paga justo:</span>
+                <button
+                  type="button"
+                  onClick={fillRemainingWithCash}
+                  className="rounded bg-slate-800 px-2 py-1 font-mono text-emerald-400 hover:bg-slate-700"
+                >
+                  {fmtMoney(total)}
+                </button>
+                {[500, 1000, 2000, 5000, 10000, 20000].map((b) => {
+                  if (b < total) return null
+                  return (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => {
+                        setRows((rs) => {
+                          const idx = rs.findIndex((r) => r.method === "CASH")
+                          if (idx >= 0) {
+                            const copy = [...rs]
+                            copy[idx] = { ...copy[idx], amount: String(b) }
+                            return copy
+                          }
+                          return [{ uid: uidRef.current++, method: "CASH", amount: String(b) }]
+                        })
+                      }}
+                      className="rounded bg-slate-800 px-2 py-1 font-mono text-slate-300 hover:bg-slate-700"
+                    >
+                      ${b}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-1 rounded-xl bg-slate-950/60 p-3 text-xs">
+              <div className="flex justify-between text-slate-400">
+                <span>Total ingresado:</span>
+                <span className="font-mono">{fmtMoney(paid)}</span>
+              </div>
+              {remaining > 0.005 && (
+                <div className="flex justify-between font-semibold text-amber-400">
+                  <span>Resta cubrir:</span>
+                  <span className="font-mono">{fmtMoney(remaining)}</span>
+                </div>
+              )}
+              {change > 0.005 && (
+                <div className="flex justify-between font-bold text-emerald-400">
+                  <span>Vuelto a entregar:</span>
+                  <span className="font-mono text-base">{fmtMoney(change)}</span>
                 </div>
               )}
             </div>
-          )}
-        </div>
+
+            {overLimit && selectedCustomer && (
+              <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                {selectedCustomer.name} superaría su límite de crédito ({fmtMoney(selectedCustomer.creditLimit)}).
+              </p>
+            )}
+
+            {hasFiado && (
+              <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-300">
+                    <BookUser size={14} /> Fiado: {fmtMoney(fiadoAmount)} en cuenta
+                  </span>
+                  {selectedCustomer ? (
+                    <button
+                      onClick={() => setCustomerId(null)}
+                      className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-xs transition hover:border-red-500/40"
+                    >
+                      {selectedCustomer.name}
+                      <Badge variant={selectedCustomer.balance > 0 ? "amber" : "emerald"}>
+                        {fmtMoney(selectedCustomer.balance)}
+                      </Badge>
+                      <X size={12} className="text-slate-500" />
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setQuickCustOpen(true)
+                        }}
+                      >
+                        <UserPlus size={13} /> + Nuevo Cliente
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setPickerOpen(!pickerOpen)}>
+                        Elegir cliente…
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {pickerOpen && !selectedCustomer && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        autoFocus
+                        placeholder="Buscar cliente por nombre..."
+                        value={pickerQ}
+                        onChange={(e) => setPickerQ(e.target.value)}
+                        className="h-9 flex-1"
+                      />
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setQuickCustOpen(true)}
+                        className="shrink-0"
+                      >
+                        <UserPlus size={13} /> + Nuevo
+                      </Button>
+                    </div>
+
+                    <div className="max-h-40 space-y-1 overflow-y-auto">
+                      {pickerList.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setCustomerId(c.id)
+                            setPickerOpen(false)
+                            setPickerQ("")
+                          }}
+                          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-slate-800"
+                        >
+                          <span>{c.name}</span>
+                          <span className="flex items-center gap-2 text-xs text-slate-500">
+                            {c.phone && <span className="font-mono">{c.phone}</span>}
+                            <Badge variant={c.balance > 0 ? "amber" : "slate"}>
+                              debe {fmtMoney(c.balance)}
+                            </Badge>
+                            <Badge variant={c.creditLimit > 0 ? "indigo" : "slate"}>
+                              límite {c.creditLimit > 0 ? fmtMoney(c.creditLimit) : "sin tope"}
+                            </Badge>
+                          </span>
+                        </button>
+                      ))}
+                      {pickerList.length === 0 && (
+                        <div className="py-3 text-center space-y-2">
+                          <p className="text-xs text-slate-500">
+                            No se encontró el cliente "{pickerQ}".
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() => setQuickCustOpen(true)}
+                          >
+                            <UserPlus size={13} /> Crear "{pickerQ || 'Nuevo cliente'}"
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      <QuickCustomerModal
+        open={quickCustOpen}
+        onClose={() => setQuickCustOpen(false)}
+        onCreated={(newCust) => {
+          setCustomerId(newCust.id)
+          setPickerOpen(false)
+          setPickerQ("")
+        }}
+        initialName={pickerQ}
+      />
+
+      {done && (
+        <ReceiptTicketModal
+          open={ticketModalOpen}
+          onClose={() => setTicketModalOpen(false)}
+          sale={done.sale}
+          change={done.change}
+        />
       )}
-    </Modal>
+    </>
   )
 }

@@ -197,23 +197,25 @@ Expone `http://localhost:3000` sirviendo el frontend y el API juntos. La base de
 
 ---
 
-## Desarrollo de funcionalidades
+## Funcionalidades principales
 
-- **Login rápido:** PIN numérico (bcrypt) + JWT 12h; acceso admin con contraseña.
-- **Turnos & arqueo:** abrir con efectivo inicial, movimientos de caja manuales (CASH_IN/CASH_OUT) y cierre con **conteo a ciegas** (el esperado se revela al terminar).
-- **Venta transaccional:** descuenta stock atómico + registra `StockMovement`, valida pagos mixtos (CASH/CARD/QR/fiado), actualiza balance y libreta del cliente.
-- **Fiados:** estado de cuenta por cliente y envío de resumen por WhatsApp.
-- **VS Keyboard:** `F2` buscar · `F4` caja · `F9`/`ESPACIO` cobrar · `ESC` vacía · `Enter` confirma · prefijos `3*producto`.
+- **Punto de Venta (POS) & Atajos:** `F2` buscar · `F4` caja · `F9`/`ESPACIO` cobrar · `ESC` vacía · `Enter` confirma · prefijos de cantidad (ej: `3*coca`).
+- **Gestión de Categorías:** CRUD completo, asignación de colores distintivos, reasignación segura de productos al eliminar y filtros rápidos tipo píldora en POS y Stock.
+- **Módulo de Proveedores & Compras:** Agenda de contactos, enlace directo a WhatsApp (`wa.me`), recepción de mercadería (actualización automática de `stock` y `costPrice`), y registro opcional de egreso de caja (`CASH_OUT`) en el turno activo.
+- **Emisión de Tickets Térmicos (58mm / 80mm / PDF):** Comprobante no fiscal monoespaciado optimizado para impresoras térmicas ESC/POS e impresión limpia vía navegador (`window.print()` con CSS `@media print`) y guardado en PDF desde el cobro o historial.
+- **Turnos & Arqueo a Ciegas:** Apertura con fondo inicial, movimientos manuales de caja y cierre con conteo ciego (el esperado se revela al finalizar).
+- **Ventas & Pagos Mixtos:** Descuento de stock transaccional, pagos combinados (Efectivo, Tarjeta Débito/Crédito, QR/Transferencia y Fiado).
+- **Libreta de Fiados:** Límite de crédito por cliente, balance en cuenta corriente, historial de movimientos y envío de resumen por WhatsApp.
 
 ### Atajos del POS
 
-| Tecla | Acción                 |
-|-------|------------------------|
-| `F2`  | Enfocar búsqueda/lente  |
-| `F4`  | Agrupa/ togga caja      |
-| `F9` / `Space` | Abrir cobro |
+| Tecla | Acción |
+|---|---|
+| `F2` | Enfocar búsqueda de producto |
+| `F4` | Movimientos manuales de caja (ingreso / egreso) |
+| `F9` / `Espacio` | Abrir cobro / checkout |
 | `ESC` | Vaciar carrito / cerrar modal |
-| `Enter` | Confirmar cantidad / pago |
+| `Enter` | Confirmar producto o cobro |
 
 ---
 

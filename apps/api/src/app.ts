@@ -32,6 +32,10 @@ export async function buildApp() {
     if (err instanceof HttpError) {
       return reply.code(err.status).send({ message: err.message, details: err.details })
     }
+    const errorObj = err as { statusCode?: number; message?: string }
+    if (errorObj?.statusCode && errorObj.statusCode >= 400 && errorObj.statusCode < 500) {
+      return reply.code(errorObj.statusCode).send({ message: errorObj.message ?? 'Solicitud incorrecta' })
+    }
     app.log.error(err)
     return reply.code(500).send({ message: 'Error interno del servidor' })
   })

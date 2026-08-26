@@ -49,19 +49,29 @@ export async function productRoutes(app: FastifyInstance) {
   })
 
   app.get('/search', async (req) => {
-    const q = ((req.query as Record<string, string | undefined>).q ?? '').trim()
+    const query = req.query as Record<string, string | undefined>
+    const q = (query.q ?? '').trim()
+    const categoryId = query.categoryId?.trim() || undefined
+
     if (!q) {
       const latest = await prisma.product.findMany({
-        where: { isActive: true },
+        where: {
+          isActive: true,
+          ...(categoryId ? { categoryId } : {}),
+        },
         include: { category: true },
         orderBy: { name: 'asc' },
-        take: 30,
+        take: 60,
       })
       return { products: latest }
     }
 
     const exact = await prisma.product.findFirst({
-      where: { barcode: q, isActive: true },
+      where: {
+        barcode: q,
+        isActive: true,
+        ...(categoryId ? { categoryId } : {}),
+      },
       include: { category: true },
     })
     if (exact) return { products: [exact] }
@@ -69,24 +79,28 @@ export async function productRoutes(app: FastifyInstance) {
     let rows = await prisma.product.findMany({
       where: {
         isActive: true,
+        ...(categoryId ? { categoryId } : {}),
         OR: [{ name: { contains: q } }, { barcode: { contains: q } }],
       },
       include: { category: true },
       orderBy: { name: 'asc' },
-      take: 30,
+      take: 60,
     })
 
     if (rows.length === 0) {
       const lower = q.toLowerCase()
       const all = await prisma.product.findMany({
-        where: { isActive: true },
+        where: {
+          isActive: true,
+          ...(categoryId ? { categoryId } : {}),
+        },
         include: { category: true },
         orderBy: { name: 'asc' },
         take: 500,
       })
       rows = all
         .filter((p) => p.name.toLowerCase().includes(lower))
-        .slice(0, 30)
+        .slice(0, 60)
     }
 
     return { products: rows }
@@ -95,6 +109,7 @@ export async function productRoutes(app: FastifyInstance) {
   app.get('/', async (req) => {
     const query = req.query as Record<string, string | undefined>
     const q = query.q?.trim()
+    const categoryId = query.categoryId?.trim() || undefined
     const lowStock = query.lowStock === '1'
     const showAll = query.all === '1'
     const page = Math.max(1, Number(query.page ?? 1))
@@ -103,6 +118,7 @@ export async function productRoutes(app: FastifyInstance) {
     let rows = await prisma.product.findMany({
       where: {
         ...(showAll ? {} : { isActive: true }),
+        ...(categoryId ? { categoryId } : {}),
         ...(q
           ? {
               OR: [
@@ -118,7 +134,10 @@ export async function productRoutes(app: FastifyInstance) {
 
     if (!q && !showAll) {
       const extra = await prisma.product.findMany({
-        where: { isActive: true },
+        where: {
+          isActive: true,
+          ...(categoryId ? { categoryId } : {}),
+        },
         include: { category: true },
         orderBy: { name: 'asc' },
         take: 1000,

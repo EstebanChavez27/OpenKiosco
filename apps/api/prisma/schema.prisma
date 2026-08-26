@@ -69,32 +69,85 @@ model CashMovement {
 model Category {
   id       String    @id @default(uuid())
   name     String    @unique
+  color    String?
+  icon     String?
   products Product[]
 }
 
 model Product {
-  id             String          @id @default(uuid())
-  barcode        String?         @unique
+  id             String              @id @default(uuid())
+  barcode        String?             @unique
   name           String
   description    String?
   categoryId     String?
-  category       Category?       @relation(fields: [categoryId], references: [id])
+  category       Category?           @relation(fields: [categoryId], references: [id])
 
-  costPrice      Float           @default(0.0)
+  costPrice      Float               @default(0.0)
   salePrice      Float
 
-  stock          Float           @default(0.0)
-  minStock       Float           @default(5.0)
-  isWeighted     Boolean         @default(false)
-  isActive       Boolean         @default(true)
+  stock          Float               @default(0.0)
+  minStock       Float               @default(5.0)
+  isWeighted     Boolean             @default(false)
+  isActive       Boolean             @default(true)
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 
   saleItems      SaleItem[]
   stockMovements StockMovement[]
+  purchaseItems  PurchaseOrderItem[]
 
   @@index([name])
+}
+
+// ----------------------------------------------------
+// SUPPLIERS & PURCHASES
+// ----------------------------------------------------
+model Supplier {
+  id             String          @id @default(uuid())
+  name           String
+  contactName    String?
+  phone          String?
+  email          String?
+  address        String?
+  notes          String?
+  createdAt      DateTime        @default(now())
+
+  purchaseOrders PurchaseOrder[]
+}
+
+// PurchaseOrderStatus: "PENDING" | "RECEIVED" | "PAID"
+model PurchaseOrder {
+  id             String              @id @default(uuid())
+  supplierId     String
+  supplier       Supplier            @relation(fields: [supplierId], references: [id])
+  status         String              @default("RECEIVED")
+  total          Float
+  invoiceNumber  String?
+  notes          String?
+  paidWithCash   Boolean             @default(false)
+  shiftId        String?
+  createdAt      DateTime            @default(now())
+
+  items          PurchaseOrderItem[]
+
+  @@index([supplierId])
+  @@index([createdAt])
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id])
+
+  quantity        Float
+  unitCost        Float
+  subtotal        Float
+
+  @@index([purchaseOrderId])
+  @@index([productId])
 }
 
 // StockMovementType: "PURCHASE" | "SALE" | "ADJUSTMENT" | "WASTE" (enum en PostgreSQL)

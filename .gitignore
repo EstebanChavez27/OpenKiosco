@@ -17,3 +17,4 @@ web.err.log
 api.err.log
 OpenKiosco-Launcher.exe
 verify.db
+*.tsbuildinfo

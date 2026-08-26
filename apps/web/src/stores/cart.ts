@@ -59,8 +59,8 @@ export const useCartStore = create<CartState>()(
         }),
       remove: (productId) =>
         set((s) => ({ items: s.items.filter((i) => i.productId !== productId) })),
-      clear: () => ({ items: [], discountPct: 0 }),
-      setDiscountPct: (v) => ({ discountPct: Math.min(100, Math.max(0, v)) }),
+      clear: () => set({ items: [], discountPct: 0 }),
+      setDiscountPct: (v) => set({ discountPct: Math.min(100, Math.max(0, v)) }),
       startShift: (shiftId) => {
         if (get().shiftId !== shiftId) set({ shiftId, items: [], discountPct: 0 })
       },

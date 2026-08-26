@@ -1,16 +1,21 @@
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import { BookUser, Package, Receipt, Wallet } from "lucide-react"
+import { BookUser, Package, Printer, Receipt, Wallet } from "lucide-react"
 import { api } from "@/lib/api"
-import type { Shift, TodayReport } from "@/lib/types"
+import type { Sale, Shift, TodayReport } from "@/lib/types"
 import { methodLabel, PAYMENT_METHODS } from "@/lib/constants"
 import { fmtDate, fmtMoney, fmtTime } from "@/lib/format"
 import { cn } from "@/lib/cn"
 import { Badge } from "@/components/ui/Badge"
+import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import { Spinner } from "@/components/ui/Spinner"
+import { ReceiptTicketModal } from "@/components/pos/ReceiptTicketModal"
 
 export default function ReportsPage() {
+  const [selectedTicketSale, setSelectedTicketSale] = useState<Sale | null>(null)
+
   const todayQ = useQuery({
     queryKey: ["reports", "today"],
     queryFn: () => api.get<TodayReport>("/reports/today"),
@@ -19,6 +24,10 @@ export default function ReportsPage() {
   const shiftsQ = useQuery({
     queryKey: ["shifts", "list"],
     queryFn: () => api.get<{ shifts: Shift[] }>("/shifts"),
+  })
+  const salesQ = useQuery({
+    queryKey: ["sales", "recent"],
+    queryFn: () => api.get<{ sales: Sale[] }>("/sales"),
   })
 
   if (todayQ.isPending || !todayQ.data) return <Spinner />
@@ -130,6 +139,73 @@ export default function ReportsPage() {
           </div>
         )}
       </Card>
+
+      {/* Ventas Recientes e Impresión de Tickets */}
+      <Card>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-semibold flex items-center gap-2">
+            <Receipt size={16} className="text-emerald-400" />
+            Ventas Recientes
+          </h2>
+          <span className="text-xs text-slate-500">Últimas 15 operaciones</span>
+        </div>
+
+        {(salesQ.data?.sales?.length ?? 0) === 0 ? (
+          <p className="py-6 text-center text-sm text-slate-500">Sin ventas registradas.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="border-b border-slate-800 text-[10px] uppercase tracking-wider text-slate-500">
+                <tr>
+                  <th className="py-2 px-3">Ticket / Fecha</th>
+                  <th className="py-2 px-3">Cajero</th>
+                  <th className="py-2 px-3">Cliente</th>
+                  <th className="py-2 px-3 text-right">Total</th>
+                  <th className="py-2 px-3 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {(salesQ.data?.sales ?? []).slice(0, 15).map((sale) => (
+                  <tr key={sale.id} className="hover:bg-slate-800/30 transition">
+                    <td className="py-2.5 px-3">
+                      <span className="font-mono font-bold text-slate-200">
+                        #{sale.id.slice(0, 8).toUpperCase()}
+                      </span>
+                      <span className="block text-[10px] text-slate-500">
+                        {fmtDate(sale.createdAt)} {fmtTime(sale.createdAt)}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-300">
+                      {sale.user?.fullName ?? "—"}
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-300">
+                      {sale.customer?.name ?? <span className="text-slate-600">Consumidor final</span>}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-400">
+                      {fmtMoney(sale.total)}
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setSelectedTicketSale(sale)}
+                      >
+                        <Printer size={13} /> Ver Ticket / PDF
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      <ReceiptTicketModal
+        open={!!selectedTicketSale}
+        onClose={() => setSelectedTicketSale(null)}
+        sale={selectedTicketSale}
+      />
     </div>
   )
 }

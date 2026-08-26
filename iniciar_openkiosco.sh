@@ -68,17 +68,15 @@ else
   echo -e "${GREEN}[1/4] Dependencias verificadas.${NC}"
 fi
 
-# 3. Comprobar base de datos
-if [ ! -f "apps/api/prisma/dev.db" ]; then
-  echo -e "${CYAN}[2/4] Preparando base de datos inicial (migraciones + seed)...${NC}"
-  (
-    cd apps/api
-    npx prisma migrate deploy
+# 3. Comprobar base de datos y migraciones
+echo -e "${CYAN}[2/4] Verificando base de datos y migraciones...${NC}"
+(
+  cd apps/api
+  npx prisma migrate deploy
+  if [ ! -f "prisma/dev.db" ]; then
     npx tsx prisma/seed.ts
-  )
-else
-  echo -e "${GREEN}[2/4] Base de datos SQLite lista.${NC}"
-fi
+  fi
+)
 
 # 4. Iniciar servicios en segundo plano
 echo -e "${CYAN}[3/4] Iniciando backend y frontend...${NC}"

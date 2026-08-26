@@ -1,8 +1,8 @@
 import { useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Boxes, Filter, PackageSearch, Pencil, Plus, Search } from "lucide-react"
+import { Boxes, Filter, Layers, PackageSearch, Pencil, Plus, Search } from "lucide-react"
 import { api } from "@/lib/api"
-import type { Product } from "@/lib/types"
+import type { Category, Product } from "@/lib/types"
 import { useDebounce } from "@/hooks/useDebounce"
 import { fmtMoney, fmtQty } from "@/lib/format"
 import { cn } from "@/lib/cn"
@@ -14,22 +14,34 @@ import { Spinner } from "@/components/ui/Spinner"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { ProductFormModal } from "@/components/inventory/ProductFormModal"
 import { StockAdjustModal } from "@/components/inventory/StockAdjustModal"
+import { CategoriesManagerModal } from "@/components/inventory/CategoriesManagerModal"
 
 export default function InventoryPage() {
   const qc = useQueryClient()
   const [rawQuery, setRawQuery] = useState("")
   const q = useDebounce(rawQuery, 250)
+  const [selectedCat, setSelectedCat] = useState<string>("")
   const [lowOnly, setLowOnly] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
+  const [catsOpen, setCatsOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Product | null>(null)
   const [adjustTarget, setAdjustTarget] = useState<Product | null>(null)
 
+  const catsQ = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => api.get<{ categories: Category[] }>("/categories"),
+  })
+
   const productsQ = useQuery({
-    queryKey: ["products", "list", q, lowOnly],
-    queryFn: () =>
-      api.get<{ products: Product[]; total: number }>(
-        `/products?q=${encodeURIComponent(q)}&lowStock=${lowOnly ? "1" : "0"}&pageSize=200`,
-      ),
+    queryKey: ["products", "list", q, selectedCat, lowOnly],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (q) params.set("q", q)
+      if (selectedCat) params.set("categoryId", selectedCat)
+      params.set("lowStock", lowOnly ? "1" : "0")
+      params.set("pageSize", "200")
+      return api.get<{ products: Product[]; total: number }>(`/products?${params.toString()}`)
+    },
   })
 
   const products = productsQ.data?.products ?? []
@@ -50,11 +62,32 @@ export default function InventoryPage() {
             onChange={(e) => setRawQuery(e.target.value)}
           />
         </div>
+
+        {/* Selector de filtro por categoría */}
+        <select
+          value={selectedCat}
+          onChange={(e) => setSelectedCat(e.target.value)}
+          className="h-[42px] rounded-lg border border-slate-700 bg-slate-900 px-3 text-xs text-slate-100 focus:border-emerald-500 focus:outline-none"
+        >
+          <option value="">Todas las categorías</option>
+          {(catsQ.data?.categories ?? []).map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
         <Button
           variant={lowOnly ? "primary" : "secondary"}
           onClick={() => setLowOnly(!lowOnly)}
         >
           <Filter size={15} /> Bajo stock
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => setCatsOpen(true)}
+        >
+          <Layers size={15} /> Categorías
         </Button>
         <Button
           variant="primary"
@@ -198,6 +231,14 @@ export default function InventoryPage() {
           void qc.invalidateQueries({ queryKey: ["products"] })
         }}
         product={adjustTarget}
+      />
+      <CategoriesManagerModal
+        open={catsOpen}
+        onClose={() => {
+          setCatsOpen(false)
+          void qc.invalidateQueries({ queryKey: ["categories"] })
+          void qc.invalidateQueries({ queryKey: ["products"] })
+        }}
       />
     </div>
   )

@@ -9,12 +9,51 @@ export interface User {
   username: string
   fullName: string
   role: Role
+  isActive?: boolean
+  createdAt?: string
 }
 
 export interface Category {
   id: string
   name: string
+  color?: string | null
+  icon?: string | null
   _count?: { products: number }
+}
+
+export interface Supplier {
+  id: string
+  name: string
+  contactName: string | null
+  phone: string | null
+  email: string | null
+  address: string | null
+  notes: string | null
+  createdAt: string
+  _count?: { purchaseOrders: number }
+}
+
+export interface PurchaseOrderItem {
+  id: string
+  productId: string
+  product?: { id: string; name: string; barcode: string | null; isWeighted?: boolean }
+  quantity: number
+  unitCost: number
+  subtotal: number
+}
+
+export interface PurchaseOrder {
+  id: string
+  supplierId: string
+  supplier?: { id: string; name: string; phone: string | null }
+  status: "PENDING" | "RECEIVED" | "PAID"
+  total: number
+  invoiceNumber: string | null
+  notes: string | null
+  paidWithCash: boolean
+  shiftId: string | null
+  createdAt: string
+  items: PurchaseOrderItem[]
 }
 
 export interface Product {

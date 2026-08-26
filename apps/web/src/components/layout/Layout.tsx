@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { BarChart3, BookUser, LogOut, Package, Store, Timer } from "lucide-react"
+import { BarChart3, BookUser, LogOut, Package, ShieldCheck, Store, Timer, Truck, Users } from "lucide-react"
 import { api } from "@/lib/api"
 import type { Shift } from "@/lib/types"
 import { useAuthStore } from "@/stores/auth"
@@ -10,17 +10,20 @@ import { useOnline } from "@/hooks/useOnline"
 import { fmtDuration, fmtTime, initials } from "@/lib/format"
 import { cn } from "@/lib/cn"
 import { CloseShiftModal } from "./CloseShiftModal"
+import { UsersManagerModal } from "../users/UsersManagerModal"
 
 const navItems = [
   { to: "/", label: "POS", icon: Store, end: true },
   { to: "/fiados", label: "Fiados", icon: BookUser, end: false },
   { to: "/stock", label: "Stock", icon: Package, end: false },
+  { to: "/proveedores", label: "Proveedores", icon: Truck, end: false },
   { to: "/reportes", label: "Reportes", icon: BarChart3, end: false },
 ]
 
 export function Layout() {
   useOnline()
   const [closeOpen, setCloseOpen] = useState(false)
+  const [usersOpen, setUsersOpen] = useState(false)
   const [tick, setTick] = useState(Date.now())
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -106,6 +109,17 @@ export function Layout() {
                 <span>Cerrar turno</span>
               </button>
             )}
+            {user?.role === "ADMIN" && (
+              <button
+                onClick={() => setUsersOpen(true)}
+                className="flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1.5 text-xs font-semibold text-indigo-300 transition hover:bg-indigo-500/20 hover:text-indigo-200"
+                title="Gestión de Usuarios y Personal"
+              >
+                <Users size={14} />
+                <span className="hidden sm:inline">Usuarios</span>
+              </button>
+            )}
+
             <div className="hidden text-right lg:block">
               <p className="text-xs font-medium text-slate-200">{user?.fullName}</p>
               <p className="text-[10px] uppercase tracking-wide text-emerald-400">{user?.role}</p>
@@ -129,6 +143,7 @@ export function Layout() {
       </main>
 
       <CloseShiftModal open={closeOpen} onClose={() => setCloseOpen(false)} />
+      <UsersManagerModal open={usersOpen} onClose={() => setUsersOpen(false)} />
     </div>
   )
 }
