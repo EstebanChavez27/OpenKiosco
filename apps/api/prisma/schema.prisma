@@ -1,0 +1,200 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ----------------------------------------------------
+// USERS & AUTHENTICATION
+// ----------------------------------------------------
+// Role: "ADMIN" | "CASHIER" (enum en PostgreSQL)
+model User {
+  id             String          @id @default(uuid())
+  username       String          @unique
+  fullName       String
+  pin            String
+  password       String?
+  role           String          @default("CASHIER")
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+
+  shifts         Shift[]
+  sales          Sale[]
+  cashMovements  CashMovement[]
+  stockMovements StockMovement[]
+}
+
+// ShiftStatus: "OPEN" | "CLOSED" (enum en PostgreSQL)
+model Shift {
+  id             String          @id @default(uuid())
+  userId         String
+  user           User            @relation(fields: [userId], references: [id])
+
+  openedAt       DateTime        @default(now())
+  closedAt       DateTime?
+  status         String          @default("OPEN")
+
+  initialCash    Float           @default(0.0)
+  expectedCash   Float?
+  actualCash     Float?
+  difference     Float?
+  notes          String?
+
+  sales          Sale[]
+  cashMovements  CashMovement[]
+}
+
+// CashMovementType: "CASH_IN" | "CASH_OUT" (enum en PostgreSQL)
+model CashMovement {
+  id          String           @id @default(uuid())
+  shiftId     String
+  shift       Shift            @relation(fields: [shiftId], references: [id])
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+
+  type        String
+  amount      Float
+  reason      String
+  createdAt   DateTime         @default(now())
+
+  @@index([shiftId])
+}
+
+// ----------------------------------------------------
+// CATALOG & INVENTORY
+// ----------------------------------------------------
+model Category {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id             String          @id @default(uuid())
+  barcode        String?         @unique
+  name           String
+  description    String?
+  categoryId     String?
+  category       Category?       @relation(fields: [categoryId], references: [id])
+
+  costPrice      Float           @default(0.0)
+  salePrice      Float
+
+  stock          Float           @default(0.0)
+  minStock       Float           @default(5.0)
+  isWeighted     Boolean         @default(false)
+  isActive       Boolean         @default(true)
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  saleItems      SaleItem[]
+  stockMovements StockMovement[]
+
+  @@index([name])
+}
+
+// StockMovementType: "PURCHASE" | "SALE" | "ADJUSTMENT" | "WASTE" (enum en PostgreSQL)
+model StockMovement {
+  id            String            @id @default(uuid())
+  productId     String
+  product       Product           @relation(fields: [productId], references: [id])
+  userId        String
+  user          User              @relation(fields: [userId], references: [id])
+
+  type          String
+  quantity      Float
+  previousStock Float
+  newStock      Float
+  reason        String?
+  createdAt     DateTime          @default(now())
+
+  @@index([productId])
+}
+
+// ----------------------------------------------------
+// CUSTOMERS & STORE CREDIT ("FIADOS")
+// ----------------------------------------------------
+model Customer {
+  id          String                @id @default(uuid())
+  name        String
+  phone       String?
+  creditLimit Float                 @default(0.0)
+  balance     Float                 @default(0.0)
+  createdAt   DateTime              @default(now())
+
+  sales       Sale[]
+  ledger      CustomerLedgerEntry[]
+}
+
+// LedgerEntryType: "CHARGE" | "PAYMENT" (enum en PostgreSQL)
+model CustomerLedgerEntry {
+  id          String          @id @default(uuid())
+  customerId  String
+  customer    Customer        @relation(fields: [customerId], references: [id])
+  saleId      String?
+  sale        Sale?           @relation(fields: [saleId], references: [id])
+
+  type        String
+  amount      Float
+  description String
+  createdAt   DateTime        @default(now())
+
+  @@index([customerId])
+}
+
+// ----------------------------------------------------
+// SALES & PAYMENTS
+// ----------------------------------------------------
+// PaymentMethod: "CASH" | "CARD_DEBIT" | "CARD_CREDIT" | "QR_TRANSFER" | "ON_ACCOUNT" (enum en PostgreSQL)
+model Sale {
+  id          String                @id @default(uuid())
+  shiftId     String
+  shift       Shift                 @relation(fields: [shiftId], references: [id])
+  userId      String
+  user        User                  @relation(fields: [userId], references: [id])
+  customerId  String?
+  customer    Customer?             @relation(fields: [customerId], references: [id])
+
+  subtotal    Float
+  discount    Float                 @default(0.0)
+  total       Float
+
+  createdAt   DateTime              @default(now())
+
+  items       SaleItem[]
+  payments    SalePayment[]
+  ledgerEntry CustomerLedgerEntry[]
+
+  @@index([shiftId])
+  @@index([createdAt])
+}
+
+model SaleItem {
+  id        String   @id @default(uuid())
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+
+  quantity  Float
+  unitPrice Float
+  costPrice Float
+  subtotal  Float
+
+  @@index([saleId])
+}
+
+model SalePayment {
+  id          String        @id @default(uuid())
+  saleId      String
+  sale        Sale          @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  method      String
+  amount      Float
+
+  @@index([saleId])
+}

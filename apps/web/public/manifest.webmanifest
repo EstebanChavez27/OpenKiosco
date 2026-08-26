@@ -1,0 +1,17 @@
+{
+  "name": "OpenKiosco",
+  "short_name": "OpenKiosco",
+  "description": "POS liviano y rápido para kioscos y almacenes de barrio",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

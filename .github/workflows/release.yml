@@ -1,0 +1,86 @@
+name: Release Multiplataforma
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'ubuntu-22.04'
+            target: 'linux'
+          - platform: 'windows-latest'
+            target: 'windows'
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar Rust estable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache de dependencias de Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Instalar dependencias del sistema en Linux
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file
+
+      - name: Instalar dependencias de Node.js
+        run: npm install
+
+      - name: Preparar recursos empaquetados de escritorio
+        run: npm run desktop:prepare
+
+      - name: Compilar y publicar Release con Tauri Action
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'OpenKiosco ${{ github.ref_name }}'
+          releaseBody: |
+            ## OpenKiosco ${{ github.ref_name }}
+            
+            Paquetes de instalación descargables para Windows y Linux:
+            
+            - **Windows:**
+              - Instalador NSIS: `*.exe`
+              - Paquete Windows Installer: `*.msi`
+            - **Linux:**
+              - Paquete Debian/Ubuntu: `*.deb`
+              - Binario portable Linux: `*.AppImage`
+          releaseDraft: false
+          prerelease: false

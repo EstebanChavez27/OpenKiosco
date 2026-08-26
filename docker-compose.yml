@@ -1,0 +1,15 @@
+services:
+  openkiosco:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: file:/data/openkiosco.db
+      JWT_SECRET: ${JWT_SECRET:-cambiar-este-secreto-en-produccion}
+      PUBLIC_DIR: /app/public
+    volumes:
+      - openkiosco-data:/data
+    restart: unless-stopped
+
+volumes:
+  openkiosco-data:

@@ -1,0 +1,37 @@
+{
+  "name": "openkiosco",
+  "version": "0.1.0",
+  "private": true,
+  "description": "POS open source liviano y rápido para kioscos y almacenes de barrio",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c green,cyan \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "build": "npm run build -w apps/api && npm run build -w apps/web",
+    "start": "npm run start -w apps/api",
+    "db:migrate": "npm run db:migrate -w apps/api",
+    "db:deploy": "npm run db:deploy -w apps/api",
+    "db:seed": "npm run db:seed -w apps/api",
+    "smoke": "node scripts/smoke.mjs",
+    "desktop:icons": "node scripts/gen-icons.mjs",
+    "desktop:prepare": "node scripts/gen-icons.mjs && node scripts/build-desktop.mjs --verify",
+    "desktop:build": "npm run desktop:prepare && tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
+    "concurrently": "^9.1.0"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "prisma@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.2": true,
+    "esbuild@0.25.12": true
+  }
+}

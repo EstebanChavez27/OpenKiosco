@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=OpenKiosco
+GenericName=Punto de Venta POS
+Comment=Punto de Venta open source para kioscos y almacenes de barrio
+Exec=bash -c 'cd "$(dirname "%k")" 2>/dev/null || cd "$PWD"; ./iniciar_openkiosco.sh'
+Icon=openkiosco
+Terminal=true
+Categories=Office;Finance;Utility;
+Keywords=pos;kiosco;venta;caja;stock;comercio;almacen;
+StartupNotify=true
