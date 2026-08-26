@@ -10,8 +10,6 @@
     "beforeBuildCommand": "npm run build -w apps/web"
   },
   "app": {
-    "appImageIfNoIcon": false,
-    "withGlobalTauri": false,
     "security": {
       "csp": null
     },
@@ -50,8 +48,7 @@
     },
     "windows": {
       "nsis": {
-        "license": null,
-        "languages": ["SpanishInternational", "English"],
+        "languages": ["Spanish", "English"],
         "installMode": "currentUser",
         "installerIcon": "icons/icon.ico",
         "uninstallerIcon": "icons/icon.ico",
