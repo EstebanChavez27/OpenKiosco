@@ -53,6 +53,8 @@ jobs:
             libgtk-3-dev \
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \
+            libfuse2 \
+            squashfs-tools \
             build-essential \
             curl \
             wget \
@@ -71,16 +73,6 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'OpenKiosco ${{ github.ref_name }}'
-          releaseBody: |
-            ## OpenKiosco ${{ github.ref_name }}
-            
-            Paquetes de instalación descargables para Windows y Linux:
-            
-            - **Windows:**
-              - Instalador NSIS: `*.exe`
-              - Paquete Windows Installer: `*.msi`
-            - **Linux:**
-              - Paquete Debian/Ubuntu: `*.deb`
-              - Binario portable Linux: `*.AppImage`
+          args: ${{ matrix.target == 'windows' && '--bundles nsis,msi' || '--bundles deb,appimage' }}
           releaseDraft: false
           prerelease: false
