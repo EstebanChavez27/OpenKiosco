@@ -73,6 +73,5 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'OpenKiosco ${{ github.ref_name }}'
-          args: ${{ matrix.target == 'windows' && '--bundles nsis,msi' || '--bundles deb,appimage' }}
           releaseDraft: false
           prerelease: false

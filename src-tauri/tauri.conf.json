@@ -7,7 +7,7 @@
     "frontendDist": "../apps/web/dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm run dev -w apps/web",
-    "beforeBuildCommand": ""
+    "beforeBuildCommand": "npm run build -w apps/web"
   },
   "app": {
     "security": {
