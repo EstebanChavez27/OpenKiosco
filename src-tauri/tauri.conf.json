@@ -29,7 +29,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "deb", "appimage"],
     "category": "Business",
     "copyright": "© 2026 OpenKiosco. Open source.",
     "publisher": "OpenKiosco",
