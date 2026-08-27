@@ -30,7 +30,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "category": "Office",
+    "category": "Business",
     "copyright": "© 2026 OpenKiosco. Open source.",
     "publisher": "OpenKiosco",
     "shortDescription": "POS liviano para kioscos y almacenes",
