@@ -1,3 +1,6 @@
+<img width="1280" height="640" alt="openkioscobanner (1)" src="https://github.com/user-attachments/assets/fee66ac7-4368-412f-97d7-7fe612625ec1" />
+
+
 # OpenKiosco
 
 POS **open source**, moderno, liviano y ultra-rápido diseñado específicamente para kioscos, minimarkets, almacenes y comercios de barrio. Optimizado para operar a máxima velocidad con teclado y lector de códigos de barras, con turnos de caja con **arqueo a ciegas**, libreta de fiados (cuentas corrientes), módulo de proveedores y compras, emisión de tickets térmicos y exportación de reportes a Excel/CSV.
