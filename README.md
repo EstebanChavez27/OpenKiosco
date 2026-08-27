@@ -1,239 +1,226 @@
 # OpenKiosco
 
-POS **open source**, liviano y ultra-rápido para kioscos, almacenes y comercios de barrio. Optimizado para operar con teclado y lector de códigos de barras, con turnos de caja, **arqueo a ciegas**, fiados (libreta de clientes) e inventario.
+POS **open source**, moderno, liviano y ultra-rápido diseñado específicamente para kioscos, minimarkets, almacenes y comercios de barrio. Optimizado para operar a máxima velocidad con teclado y lector de códigos de barras, con turnos de caja con **arqueo a ciegas**, libreta de fiados (cuentas corrientes), módulo de proveedores y compras, emisión de tickets térmicos y exportación de reportes a Excel/CSV.
 
 ---
 
-## Stack
+## 🚀 Tecnologías y Arquitectura
 
-- **Backend:** Node.js 20+ · Fastify 5 · Prisma ORM · SQLite (WAL) en desarrollo / PostgreSQL en self-host.
-- **Frontend:** React 18 + Vite + Tailwind CSS v4 + Zustand + TanStack Query + Lucide.
-- **Desktop:** Tauri v2 (opcional) para empaquetar un `.exe` nativo.
-- **Monorepo:** npm workspaces (`apps/api`, `apps/web`, `src-tauri`).
+- **Backend:** Node.js 20+ · Fastify 5 · Prisma ORM · SQLite en modo WAL (local) / PostgreSQL (self-hosted).
+- **Frontend:** React 18 · Vite · Tailwind CSS v4 · Zustand · TanStack Query · Lucide Icons · Sonner.
+- **Desktop Nativo:** Tauri v2 (Rust) para empaquetado portable multiplataforma en Windows (`.exe` NSIS / `.msi`) y Linux (`.deb` / `.AppImage`).
+- **Monorepo Workspace:** npm workspaces (`apps/api`, `apps/web`, `src-tauri`).
 
 ```
 openkiosco/
 ├── apps/
-│   ├── api/            # Backend Fastify + Prisma
-│   │   └── prisma/     # schema.prisma, migraciones, seed
-│   ├── web/            # SPA React + Tailwind
-│   └── (web/dist)      # build de producción
-├── src-tauri/          # escritorio nativo Tauri v2 (Opción A)
-├── scripts/            # launcher, empaquetado y helpers (Opción B)
-├── iniciar_openkiosco.bat
-├── docker-compose.yml
+│   ├── api/            # Backend REST Fastify + Prisma ORM
+│   │   ├── prisma/     # schema.prisma, migraciones y seed demo
+│   │   └── src/        # Módulos: auth, shifts, products, categories, customers, suppliers, sales, reports, users
+│   ├── web/            # SPA React 18 + Vite + Tailwind CSS
+│   │   └── src/        # Componentes POS, inventario, proveedores, reportes, fiados, layout
+├── src-tauri/          # Wrapper de escritorio nativo Tauri v2 en Rust
+├── scripts/            # Scripts de empaquetado, verificación y lanzadores locales
+├── iniciar_openkiosco.bat # Lanzador de 1 clic para Windows
+├── iniciar_openkiosco.sh  # Lanzador de 1 clic para Linux
 └── package.json
 ```
 
 ---
 
-## Empezar en desarrollo
+## ✨ Funcionalidades y Módulos
 
-**Requisitos:** Node.js ≥ 20 (y npm).
+### 1. 🛒 Punto de Venta (POS) de Alta Velocidad
+- **Operación 100% por Teclado y Código de Barras:** Atajos globales para cobrar, buscar artículos o registrar movimientos sin tocar el mouse.
+- **Prefijos Multiplicadores y Productos Pesables:** Soporte para venta por bulto/múltiplos (ej: `3*7790001000011` o `3*coca`) y productos fraccionados por kilogramo (ej: `0.5*pan`).
+- **Búsqueda Inteligente:** Coincidencia exacta por código de barras y búsqueda difusa (fuzzy search) instantánea por nombre de producto.
+- **Pagos Mixtos y Divididos:** Combinación flexible de múltiples medios de pago en una sola venta:
+  - Efectivo (con cálculo automático de vuelto).
+  - Tarjeta de Débito.
+  - Tarjeta de Crédito.
+  - Transferencia / QR (Mercado Pago, MODO, etc.).
+  - Fiado / Cuenta Corriente de Cliente.
+- **Gestión Reactiva del Carrito:** Botón "Vaciar Carrito", limpieza automática post-venta y devolución instantánea del foco al buscador.
 
-```bash
-npm install
-npm run dev              # API en :3000 + Web en :5173 (proxy /api)
-```
+### 2. 🏷️ Gestión de Categorías
+- **CRUD Completo:** Creación, edición y administración de categorías de productos.
+- **Identificación Visual:** Selector de paleta de colores distintivos.
+- **Filtros Rápidos:** Píldoras de filtrado interactivo por categoría en la pantalla de ventas (POS) y en el catálogo de inventario.
+- **Eliminación Segura:** Opción de reasignar o desvincular productos a "Sin categoría" al eliminar una categoría existente.
 
-Preparar la base de datos (solo la primera vez):
+### 3. 🚚 Módulo de Proveedores y Compras
+- **Directorio de Proveedores:** Registro de contactos, teléfono, correo, CUIT/RUT, dirección y notas.
+- **Acceso Directo a WhatsApp:** Botón para iniciar chat directo con el proveedor (`wa.me`) con un solo clic.
+- **Recepción de Mercadería:** Registro de órdenes de compra con actualización automática de existencias (`stock`) y recálculo del precio de costo (`costPrice`).
+- **Integración con Caja Chica:** Opción para pagar la compra con dinero físico del turno activo, generando automáticamente el egreso correspondiente (`CASH_OUT`).
 
-```bash
-npm run db:migrate      # aplica migraciones
-npm run db:seed         # usuario demo + productos + clientes
-```
+### 4. 📖 Libreta de Clientes y Fiados (Cuentas Corrientes)
+- **Límite de Crédito:** Asignación de tope máximo de fiado por cliente para evitar sobreendeudamiento.
+- **Creación Rápida Inline:** Botón `+ Nuevo Cliente` directamente desde el modal de cobro fiado para registrar clientes sin perder la venta en curso.
+- **Estado de Cuenta Transaccional:** Registro detallado de cargos (ventas a cuenta) y pagos/abonos parciales o totales.
+- **Resumen por WhatsApp:** Envío de estado de deuda y detalle de cuenta corriente al WhatsApp del cliente.
 
-**Usuarios demo:**
+### 5. 🔒 Turnos de Caja y Arqueo a Ciegas (Anti-Fraude)
+- **Apertura de Turno:** Registro de fondo de caja inicial.
+- **Movimientos de Caja Chica:** Registro de ingresos y extracciones manuales (pago de fletes, gastos menores, retiro de ganancias) con motivo obligatorio.
+- **Arqueo a Ciegas:** Al cerrar el turno, el cajero cuenta y declara el efectivo físico sin conocer el total calculado por el sistema. Una vez confirmado, se revelan el monto esperado, el monto contado y la diferencia exacta (sobrante/faltante).
+- **Exportación Directa del Turno:** Botón `📥 Exportar CSV` en el mismo modal de cierre para descargar el balance del turno antes o después de confirmar.
 
-| Usuario | Rol    | PIN   | Contraseña (admin) |
-|---------|--------|-------|--------------------|
-| `admin` | ADMIN  | `1234`| `admin123`         |
-| `caja1` | CAJA   | `1111`| —                  |
+### 6. 🧾 Emisión de Tickets Térmicos (58mm / 80mm / PDF)
+- **Formato ESC/POS Monoespaciado:** Diseñado específicamente para impresoras térmicas de tickets y comandas.
+- **Selector de Ancho:** Configuración rápida para rollos de 58 mm o 80 mm.
+- **Leyenda No Fiscal:** Encabezados y totales claros para control interno.
+- **Impresión y Guardado:** Impresión directa mediante `@media print` del navegador o descarga en formato PDF desde la pantalla de cobro o desde el historial de ventas.
 
-Tests end-to-end del API:
+### 7. 📊 Dashboard de Reportes y Métricas Reactivas
+- **Filtro Temporal y por Turno:** Selector superior con opciones:
+  - `Ventas de Hoy` (Vista por defecto).
+  - `Histórico Global Consolidado` (Todas las ventas acumuladas).
+  - `Rango de Fechas Personalizado` (Filtro interactivo `Desde` y `Hasta`).
+  - `Lista de Turnos Recientes` (Desglose por turno con cajero, fecha y estado).
+- **Métricas Clave en Tiempo Real:**
+  - Ventas Totales y Cantidad de Tickets.
+  - **Ganancia Estimada** (Ventas menos Costo de Mercadería).
+  - Ticket Promedio.
+  - Total acumulado en Fiados.
+  - Balance de Caja Chica (Total Ingresos vs. Total Egresos).
+  - Desglose por Medio de Pago con gráficos comparativos.
+  - Alertas de Stock Crítico (artículos por debajo del mínimo).
+- **Historial de Ventas:** Tabla completa con reimpresión de tickets y detalles de cobro.
 
-```bash
-npm run smoke
-```
+### 8. 📥 Módulo de Exportación a CSV (Excel / Sheets)
+- **Exportación Granular:** Modal con checkboxes para seleccionar qué entidades exportar:
+  - [x] Ventas y detalle de artículos cobrados.
+  - [x] Compras y recepción a proveedores.
+  - [x] Movimientos y ajustes de stock.
+  - [x] Entradas y salidas de caja chica (Cash in / out).
+  - [x] Resumen de turnos y arqueos (Sobrante/Faltante).
+- **Compatibilidad Total:** Archivos codificados en **UTF-8 con BOM (`\uFEFF`)** y escape estándar para apertura nativa y sin caracteres corruptos en Microsoft Excel, Google Sheets y LibreOffice Calc.
+- **Alcance Flexible:** Descarga por turno activo, por rango de fechas o de todo el historial.
 
-> El frontend corre en `http://localhost:5173`. El API escucha en `http://localhost:3000/api`.
-
----
-
-## Opción A · Desktop nativo con Tauri v2 (Recomendado Multiplataforma)
-
-Empaqueta el frontend y el backend en instaladores nativos para **Windows** (`.exe` NSIS, `.msi` WiX) y **Linux** (`.deb`, `.AppImage`), sin necesidad de abrir terminales para el usuario final. El backend Fastify + Prisma se incluye embebido junto a un **Node.js portable** y se administra automáticamente al abrir y cerrar la aplicación.
-
-### Cómo funciona
-
-1. `scripts/build-desktop.mjs` prepara los recursos:
-   - Compila el frontend (`apps/web` → `dist`).
-   - Empaqueta el backend a un único bundle CJS con **esbuild**.
-   - Copia `schema.prisma` + migraciones y arma dependencias de producción.
-   - Incrusta el runtime de Node portable (`node.exe` en Windows / `node` en Linux).
-2. Tauri compila la aplicación nativa en Rust:
-   - Inicia el servidor backend en el puerto `4820` en segundo plano.
-   - Ejecuta las migraciones (`AUTO_MIGRATE=1`) automáticamente al primer inicio.
-   - Almacena la base de datos de manera aislada (`%APPDATA%\OpenKiosco` en Windows / `~/.openkiosco` en Linux).
-   - Finaliza el proceso hijo de manera limpia al cerrar la ventana.
-
-### Compilación Manual
-
-#### Requisitos Previos:
-- **Node.js ≥ 20** y **npm**.
-- **Rust / Cargo** (instalar mediante [rustup.rs](https://rustup.rs)).
-- **En Linux (Debian / Ubuntu / Linux Mint / etc.):**
-  ```bash
-  sudo apt update
-  sudo apt install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev build-essential curl wget file
-  ```
-- **En Linux (Fedora / RHEL):**
-  ```bash
-  sudo dnf install -y webkit2gtk4.1-devel libappindicator-gtk3-devel librsvg2-devel openssl-devel gtk3-devel
-  ```
-- **En Linux (Arch Linux):**
-  ```bash
-  sudo pacman -S webkit2gtk-4.1 libappindicator-gtk3 librsvg openssl gtk3 base-devel
-  ```
-
-#### Comandos de Compilación:
-
-```bash
-# 1. Instalar dependencias del proyecto
-npm install
-
-# 2. Generar instaladores nativos según el sistema operativo actual
-npm run desktop:build
-```
-
-#### Binarios generados:
-
-- **En Windows:**
-  - Instalador NSIS: `src-tauri/target/release/bundle/nsis/OpenKiosco_0.1.0_x64-setup.exe`
-  - Paquete MSI: `src-tauri/target/release/bundle/msi/OpenKiosco_0.1.0_x64_es-AR.msi`
-- **En Linux:**
-  - Paquete Debian/Ubuntu: `src-tauri/target/release/bundle/deb/openkiosco_0.1.0_amd64.deb`
-  - Paquete AppImage portable: `src-tauri/target/release/bundle/appimage/openkiosco_0.1.0_amd64.AppImage`
-
-#### Instalación y uso en Linux:
-
-```bash
-# Instalar paquete .deb:
-sudo apt install ./src-tauri/target/release/bundle/deb/openkiosco_0.1.0_amd64.deb
-
-# O ejecutar directamente el .AppImage:
-chmod +x src-tauri/target/release/bundle/appimage/openkiosco_0.1.0_amd64.AppImage
-./src-tauri/target/release/bundle/appimage/openkiosco_0.1.0_amd64.AppImage
-```
-
-### Verificar el empaquetado sin compilar con Rust
-
-```bash
-npm run desktop:prepare
-```
-
-Prepara todos los recursos, arranca el backend empaquetado, valida `/health` y comprueba que se sirva la SPA y la API.
+### 9. 🛡️ Administración de Usuarios y Seguridad (RBAC)
+- **Control de Acceso Basado en Roles:**
+  - `ADMIN`: Control total, gestión de personal, reportes y configuración.
+  - `CASHIER`: Ventas, cobros, fiados y arqueos de caja.
+- **Acceso Rápido por PIN:** Autenticación ágil mediante PIN numérico de 4 a 6 dígitos ideal para pantallas táctiles y teclados numéricos.
+- **Panel de Administración de Personal:** Alta de usuarios, cambio de roles, activación/desactivación y reseteo de PIN/contraseña protegido para administradores.
 
 ---
 
-## Opción B · Lanzadores locales de 1 clic (Sin compilar con Rust)
-
-Si no deseás instalar el compilador de Rust, podés usar los scripts lanzadores locales con un solo clic. Requieren tener instalado Node.js ≥ 20.
-
-### En Windows:
-Doble clic en **`iniciar_openkiosco.bat`** (o ejecutar `scripts\run-openkiosco.ps1`).
-
-### En Linux:
-1. Dar permisos de ejecución si es necesario:
-   ```bash
-   chmod +x iniciar_openkiosco.sh
-   ```
-2. Ejecutar con doble clic o desde la terminal:
-   ```bash
-   ./iniciar_openkiosco.sh
-   ```
-
-El lanzador:
-- Comprueba que Node.js ≥ 20 esté disponible.
-- Instala automáticamente `node_modules` la primera vez.
-- Aplica migraciones y datos demo (seed) si no existen.
-- Inicia la API y la interfaz web en segundo plano.
-- Abre automáticamente el navegador en `http://localhost:5173`.
-- Al presionar `Q` o cerrar la ventana, detiene todos los procesos limpiamente.
-
-#### Acceso directo de escritorio en Linux (`openkiosco.desktop`):
-Podés copiar el acceso directo a tus aplicaciones:
-```bash
-cp openkiosco.desktop ~/.local/share/applications/
-```
-
----
-
-## CI/CD · Releases Automáticas en GitHub
-
-El repositorio incluye un workflow en `.github/workflows/release.yml` para compilar automáticamente en la nube:
-
-1. Creá y subí un tag con formato semántico (por ejemplo `v0.1.0`):
-   ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
-   ```
-2. GitHub Actions activará una matriz con runners de **Windows** y **Linux (Ubuntu)**.
-3. El workflow compilará los paquetes y publicará automáticamente los archivos en la sección **Releases** de GitHub:
-   - `OpenKiosco_0.1.0_x64-setup.exe` (Windows)
-   - `OpenKiosco_0.1.0_x64.msi` (Windows)
-   - `openkiosco_0.1.0_amd64.deb` (Linux Debian/Ubuntu)
-   - `openkiosco_0.1.0_amd64.AppImage` (Linux Portable)
-
----
-
-## Docker (self-hosted)
-
-```bash
-docker compose up --build
-```
-
-Expone `http://localhost:3000` sirviendo el frontend y el API juntos. La base de datos se persiste en el volumen `openkiosco-data`.
-
----
-
-## Funcionalidades principales
-
-- **Punto de Venta (POS) & Atajos:** `F2` buscar · `F4` caja · `F9`/`ESPACIO` cobrar · `ESC` vacía · `Enter` confirma · prefijos de cantidad (ej: `3*coca`).
-- **Gestión de Categorías:** CRUD completo, asignación de colores distintivos, reasignación segura de productos al eliminar y filtros rápidos tipo píldora en POS y Stock.
-- **Módulo de Proveedores & Compras:** Agenda de contactos, enlace directo a WhatsApp (`wa.me`), recepción de mercadería (actualización automática de `stock` y `costPrice`), y registro opcional de egreso de caja (`CASH_OUT`) en el turno activo.
-- **Emisión de Tickets Térmicos (58mm / 80mm / PDF):** Comprobante no fiscal monoespaciado optimizado para impresoras térmicas ESC/POS e impresión limpia vía navegador (`window.print()` con CSS `@media print`) y guardado en PDF desde el cobro o historial.
-- **Turnos & Arqueo a Ciegas:** Apertura con fondo inicial, movimientos manuales de caja y cierre con conteo ciego (el esperado se revela al finalizar).
-- **Ventas & Pagos Mixtos:** Descuento de stock transaccional, pagos combinados (Efectivo, Tarjeta Débito/Crédito, QR/Transferencia y Fiado).
-- **Libreta de Fiados:** Límite de crédito por cliente, balance en cuenta corriente, historial de movimientos y envío de resumen por WhatsApp.
-
-### Atajos del POS
+## ⌨️ Atajos de Teclado del POS
 
 | Tecla | Acción |
 |---|---|
-| `F2` | Enfocar búsqueda de producto |
-| `F4` | Movimientos manuales de caja (ingreso / egreso) |
-| `F9` / `Espacio` | Abrir cobro / checkout |
-| `ESC` | Vaciar carrito / cerrar modal |
-| `Enter` | Confirmar producto o cobro |
+| `F2` | Enfocar buscador de productos / código de barras |
+| `F4` | Abrir movimientos manuales de caja chica (Ingreso / Egreso) |
+| `F9` / `Espacio` | Abrir modal de cobro / checkout |
+| `ESC` | Vaciar carrito actual / Cerrar modales |
+| `Enter` | Agregar producto buscado / Confirmar cobro |
+| `3*coca` | Multiplicador de cantidad de producto |
+| `0.5*pan` | Cantidad fraccionada / pesable por kilogramo |
 
 ---
 
-## Scripts del proyecto
+## 📦 Puesta en Marcha en Desarrollo
 
-| Comando | Finalidad |
-|---------|-----------|
-| `npm run dev` | API + web en paralelo |
-| `npm run build` | typecheck + build de ambos |
-| `npm run smoke` | test end-to-end del API |
-| `npm run db:migrate|deploy|seed` | ciclo de BD |
-| `npm run desktop:icons` | regenera iconos Tauri |
-| `npm run desktop:prepare` | prepara recursos y verifica backend empaquetado |
-| `npm run desktop:build` | genera el `.exe` instalador (Tauri) |
-| `npm run tauri` | alias del CLI de Tauri |
+**Requisitos:** Node.js ≥ 20 y npm.
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/EstebanChavez27/OpenKiosco.git
+cd OpenKiosco
+
+# 2. Instalar dependencias del monorepo
+npm install
+
+# 3. Aplicar migraciones y datos de prueba
+npm run db:migrate
+npm run db:seed
+
+# 4. Iniciar frontend y backend en paralelo
+npm run dev
+```
+
+> **Frontend:** `http://localhost:5173` | **API:** `http://localhost:3000/api`
+
+### Usuarios Demo:
+
+| Usuario | Rol | PIN | Contraseña (Admin) |
+|---|---|---|---|
+| `admin` | `ADMIN` | `1234` | `admin123` |
+| `caja1` | `CASHIER` | `1111` | — |
 
 ---
 
-## Licencia
+## 🖥️ Lanzadores Locales de 1 Clic (Sin compilar Rust)
 
-Open source. Consultá los términos del proyecto.
+OpenKiosco incluye scripts ejecutables para iniciar la aplicación localmente sin necesidad de instalar Rust:
+
+- **En Windows:** Doble clic sobre **`iniciar_openkiosco.bat`** (o ejecutar `scripts\run-openkiosco.ps1`).
+- **En Linux:** Dar permisos y ejecutar **`iniciar_openkiosco.sh`**:
+  ```bash
+  chmod +x iniciar_openkiosco.sh
+  ./iniciar_openkiosco.sh
+  ```
+  *(Opcional: copiar `openkiosco.desktop` a `~/.local/share/applications/` para iniciar desde el menú de aplicaciones).*
+
+---
+
+## 🛠️ Compilación Nativa de Escritorio (Tauri v2)
+
+Genera paquetes instalables nativos que incluyen el backend y un Node.js portable embebido (sin terminales visibles para el usuario).
+
+### Requisitos:
+- **Rust y Cargo:** Instalar mediante [rustup.rs](https://rustup.rs).
+- **Dependencias en Linux (Debian / Ubuntu):**
+  ```bash
+  sudo apt update
+  sudo apt install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libfuse2 squashfs-tools build-essential curl wget file
+  ```
+- **Dependencias en Windows:** [WiX Toolset v3.14+](https://wixtoolset.org/) (`choco install wixtoolset -y`).
+
+### Comando de Compilación:
+```bash
+npm run desktop:build
+```
+
+### Paquetes Generados:
+- **Windows:**
+  - Instalador NSIS: `src-tauri/target/release/bundle/nsis/OpenKiosco_0.3.0_x64-setup.exe`
+  - Paquete MSI: `src-tauri/target/release/bundle/msi/OpenKiosco_0.3.0_x64_en-US.msi`
+- **Linux:**
+  - Paquete Debian/Ubuntu: `src-tauri/target/release/bundle/deb/openkiosco_0.3.0_amd64.deb`
+  - Paquete portable AppImage: `src-tauri/target/release/bundle/appimage/openkiosco_0.3.0_amd64.AppImage`
+
+---
+
+## 🌐 Publicación y Releases Automáticas (GitHub Actions)
+
+El repositorio cuenta con integración continua (`.github/workflows/release.yml`) para compilar releases en la nube automáticamente:
+
+```bash
+git tag v0.3.0
+git push origin v0.3.0
+```
+
+GitHub Actions compilará en paralelo los binarios para Windows y Linux y los adjuntará automáticamente a la sección **Releases** de tu repositorio.
+
+---
+
+## 📜 Comandos Disponibles
+
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Inicia backend Fastify y frontend Vite en paralelo con HMR |
+| `npm run build` | Compila TypeScript y genera el build de producción web y API |
+| `npm run smoke` | Ejecuta la suite de pruebas de integración automatizadas (E2E) |
+| `npm run db:migrate` | Ejecuta y sincroniza las migraciones de Prisma |
+| `npm run db:seed` | Carga el catálogo, categorías, clientes y usuarios demo |
+| `npm run desktop:prepare` | Empaqueta frontend/backend y verifica el runtime portable |
+| `npm run desktop:build` | Genera los instaladores nativos de escritorio con Tauri |
+
+---
+
+## 📄 Licencia
+
+Este proyecto es de código abierto (**Open Source**). Sentite libre de usarlo, adaptarlo y mejorarlo para tu negocio o comunidad.
