@@ -5,10 +5,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { ZodError } from 'zod'
 import { HttpError } from './utils/errors.js'
+import { ensureDefaultAdmin } from './utils/bootstrap.js'
 import authPlugin from './plugins/auth.js'
 import { registerModules } from './modules/index.js'
 
 export async function buildApp() {
+  await ensureDefaultAdmin()
+
   const app = Fastify({
     logger: {
       level: process.env.LOG_LEVEL ?? 'info',

@@ -2,6 +2,15 @@
 
 POS **open source**, moderno, liviano y ultra-rápido diseñado específicamente para kioscos, minimarkets, almacenes y comercios de barrio. Optimizado para operar a máxima velocidad con teclado y lector de códigos de barras, con turnos de caja con **arqueo a ciegas**, libreta de fiados (cuentas corrientes), módulo de proveedores y compras, emisión de tickets térmicos y exportación de reportes a Excel/CSV.
 
+> [!IMPORTANT]
+> ### 🔑 Credenciales de Acceso Inicial por Defecto (Auto-Seeding)
+> Al abrir OpenKiosco por primera vez en cualquier plataforma (instalador de Windows, Linux, Docker o desarrollo local), el sistema crea automáticamente el usuario administrador inicial:
+> - **Usuario:** `admin`
+> - **PIN de acceso rápido:** `1234`
+> - **Contraseña de administrador:** `1234`
+>
+> ⚠️ **Aviso de Seguridad:** Al ingresar por primera vez, dirigite a la sección superior **"Usuarios"** para actualizar tu PIN y contraseña por una clave segura, y para dar de alta las cuentas de tus cajeros.
+
 ---
 
 ## 🚀 Tecnologías y Arquitectura
@@ -143,11 +152,11 @@ npm run dev
 
 > **Frontend:** `http://localhost:5173` | **API:** `http://localhost:3000/api`
 
-### Usuarios Demo:
+### Usuarios Demo / Iniciales:
 
 | Usuario | Rol | PIN | Contraseña (Admin) |
 |---|---|---|---|
-| `admin` | `ADMIN` | `1234` | `admin123` |
+| `admin` | `ADMIN` | `1234` | `1234` |
 | `caja1` | `CASHIER` | `1111` | — |
 
 ---
@@ -221,6 +230,37 @@ GitHub Actions compilará en paralelo los binarios para Windows y Linux y los ad
 
 ---
 
+## 🤝 Cómo Contribuir (Contributing & PRs)
+
+¡Las contribuciones de la comunidad son súper bienvenidas! Si encontrás un error, querés sugerir una nueva funcionalidad o mejorar el código existente:
+
+1. **Hacé un Fork** del repositorio en GitHub.
+2. **Creá una rama descriptiva** para tu mejora o corrección:
+   ```bash
+   git checkout -b feature/nueva-mejora
+   # o para correcciones:
+   git checkout -b fix/correccion-ticket
+   ```
+3. **Realizá tus commits** con mensajes claros y descriptivos.
+4. **Verificá los tests y build**:
+   ```bash
+   npm run build
+   npm run smoke
+   ```
+5. **Enviá un Pull Request (PR)** hacia la rama `main` explicando los cambios introducidos y el problema que resuelve.
+
+---
+
+## 🤖 Origen del Proyecto y Metodología de Desarrollo
+
+> *"Este proyecto nació bajo el enfoque de **vibecoding**, desarrollado en su mayor parte mediante iteraciones de IA utilizando modelos como **Gemini 3.7 Flash**, **GLM 5.3** y **DeepSeek V4 Flash**, complementado con refactorización, arquitectura y ajustes manuales para garantizar rendimiento, estabilidad local y seguridad."*
+
+---
+
 ## 📄 Licencia
 
-Este proyecto es de código abierto (**Open Source**). Sentite libre de usarlo, adaptarlo y mejorarlo para tu negocio o comunidad.
+Este proyecto es software libre distribuido bajo los términos de la **GNU Affero General Public License v3.0 (GNU AGPLv3)**.
+
+Esto garantiza que **OpenKiosco** sea 100% libre y de código abierto para siempre. Cualquier modificación, mejora o software derivado (incluso si se ejecuta como servicio en red o en la nube) debe mantenerse bajo esta misma licencia, con su código fuente disponible públicamente para toda la comunidad.
+
+Consultá el archivo [LICENSE](LICENSE) para ver los términos completos.

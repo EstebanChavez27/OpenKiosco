@@ -5,6 +5,7 @@ description = "OpenKiosco - POS liviano y rapido"
 authors = ["OpenKiosco"]
 edition = "2021"
 rust-version = "1.77"
+license = "AGPL-3.0-only"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

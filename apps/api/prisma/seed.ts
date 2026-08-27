@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 
 async function main() {
   const adminPin = await bcrypt.hash('1234', 10)
-  const adminPass = await bcrypt.hash('admin123', 10)
+  const adminPass = await bcrypt.hash('1234', 10)
   const cashierPin = await bcrypt.hash('1111', 10)
 
   await prisma.user.upsert({
@@ -109,7 +109,7 @@ async function main() {
 
   console.log('')
   console.log('Seed completado.')
-  console.log('  Admin  -> usuario: admin   | PIN: 1234 | contraseña: admin123')
+  console.log('  Admin  -> usuario: admin   | PIN: 1234 | contraseña: 1234')
   console.log('  Cajero -> usuario: caja1   | PIN: 1111')
   console.log(`  ${products.length} productos, ${categoriesData.length} categorías, 3 clientes demo.`)
 }

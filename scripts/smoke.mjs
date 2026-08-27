@@ -41,6 +41,9 @@ async function main() {
   assert(login.status === 200 && login.data.token, 'POST /auth/login-pin (admin/1234)')
   token = login.data.token
 
+  const loginPass = await req('POST', '/api/auth/login-admin', { username: 'admin', password: '1234' }, false)
+  assert(loginPass.status === 200 && loginPass.data.token, 'POST /auth/login-admin (admin/1234)')
+
   const me = await req('GET', '/api/auth/me')
   assert(me.status === 200 && me.data.user.role === 'ADMIN', 'GET /auth/me')
 

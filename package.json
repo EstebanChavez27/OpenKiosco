@@ -2,6 +2,7 @@
   "name": "openkiosco",
   "version": "0.3.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "description": "POS open source liviano y rápido para kioscos y almacenes de barrio",
   "workspaces": [
     "apps/api",
