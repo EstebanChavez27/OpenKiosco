@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Lock } from "lucide-react"
+import { Download, FileSpreadsheet, Lock } from "lucide-react"
 import { toast } from "sonner"
 import { api } from "@/lib/api"
 import type { Shift } from "@/lib/types"
 import { methodLabel } from "@/lib/constants"
 import { fmtMoney, num } from "@/lib/format"
+import { downloadReportCsv } from "@/lib/exportCsv"
 import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
@@ -25,6 +26,13 @@ export function CloseShiftModal({ open, onClose }: { open: boolean; onClose: () 
   const qc = useQueryClient()
   const [actualCash, setActualCash] = useState("")
   const [notes, setNotes] = useState("")
+  const [exporting, setExporting] = useState(false)
+
+  const currentShiftQ = useQuery({
+    queryKey: ["shifts", "current"],
+    queryFn: () => api.get<{ shift: Shift | null }>("/shifts/current"),
+    enabled: open,
+  })
 
   useEffect(() => {
     if (open) {
@@ -38,17 +46,38 @@ export function CloseShiftModal({ open, onClose }: { open: boolean; onClose: () 
       api.post<CloseResult>("/shifts/close", dto),
     onSuccess: () => {
       qc.invalidateQueries()
-      toast.success("Turno cerrado")
+      toast.success("Turno cerrado exitosamente")
     },
     onError: (e: Error) => toast.error(e.message),
   })
 
   const result = closeM.data
+  const activeShiftId = result?.shift.id || currentShiftQ.data?.shift?.id
 
   const submit = () => {
     const amount = num(actualCash)
     if (amount < 0 || actualCash.trim() === "") return
     closeM.mutate({ actualCash: amount, notes: notes.trim() || undefined })
+  }
+
+  const handleExportShiftCsv = async () => {
+    if (!activeShiftId) {
+      toast.error("No se detectó un turno activo para exportar")
+      return
+    }
+
+    setExporting(true)
+    try {
+      await downloadReportCsv({
+        shiftId: activeShiftId,
+        types: ["sales", "cash_movements", "purchases", "shifts"],
+      })
+      toast.success("Reporte del turno descargado en CSV")
+    } catch (e: any) {
+      toast.error(e.message || "Error al exportar reporte del turno")
+    } finally {
+      setExporting(false)
+    }
   }
 
   const diffBadge = result?.shift.difference ?? null
@@ -66,33 +95,57 @@ export function CloseShiftModal({ open, onClose }: { open: boolean; onClose: () 
         onClose()
         setTimeout(() => closeM.reset(), 200)
       }}
-      title={result ? "Cierre de turno" : "Cerrar turno"}
+      title={result ? "Cierre de turno completado" : "Cerrar turno y arqueo"}
       icon={<Lock size={18} className="text-amber-400" />}
+      size="md"
       footer={
         result ? (
-          <Button
-            variant="primary"
-            onClick={() => {
-              onClose()
-              setTimeout(() => closeM.reset(), 200)
-            }}
-          >
-            Finalizar
-          </Button>
-        ) : (
-          <>
-            <Button variant="ghost" onClick={onClose}>
-              Cancelar
+          <div className="flex w-full items-center justify-between">
+            <Button
+              variant="secondary"
+              loading={exporting}
+              onClick={handleExportShiftCsv}
+            >
+              <Download size={14} /> Exportar Reporte del Turno (CSV)
             </Button>
             <Button
               variant="primary"
-              loading={closeM.isPending}
-              disabled={actualCash.trim() === "" || num(actualCash) < 0}
-              onClick={submit}
+              onClick={() => {
+                onClose()
+                setTimeout(() => closeM.reset(), 200)
+              }}
             >
-              Confirmar cierre
+              Finalizar
             </Button>
-          </>
+          </div>
+        ) : (
+          <div className="flex w-full items-center justify-between">
+            {activeShiftId ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={exporting}
+                onClick={handleExportShiftCsv}
+                title="Descargar detalle actual del turno antes de cerrar"
+              >
+                <Download size={13} /> Exportar CSV
+              </Button>
+            ) : <span />}
+
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                loading={closeM.isPending}
+                disabled={actualCash.trim() === "" || num(actualCash) < 0}
+                onClick={submit}
+              >
+                Confirmar cierre
+              </Button>
+            </div>
+          </div>
         )
       }
     >
@@ -125,7 +178,7 @@ export function CloseShiftModal({ open, onClose }: { open: boolean; onClose: () 
                     {methodLabel(method as never)}{" "}
                     <span className="text-xs text-slate-500">({data.count})</span>
                   </span>
-                  <span className="font-mono">{fmtMoney(data.amount)}</span>
+                  <span className="font-mono font-semibold">{fmtMoney(data.amount)}</span>
                 </div>
               ))}
               {result.summary.cashIn > 0 && (
@@ -163,12 +216,12 @@ export function CloseShiftModal({ open, onClose }: { open: boolean; onClose: () 
           </div>
 
           <Input
-            label="Efectivo contado en caja"
+            label="Efectivo contado en caja *"
             mono
             inputMode="decimal"
             autoFocus
             placeholder="0.00"
-            className="h-14 text-2xl"
+            className="h-14 text-2xl font-bold"
             value={actualCash}
             onChange={(e) => setActualCash(e.target.value.replace(/[^\d.,]/g, ""))}
             onKeyDown={(e) => e.key === "Enter" && submit()}
@@ -191,7 +244,9 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
   return (
     <div className="flex items-center justify-between rounded-lg bg-slate-800/60 p-3">
       <span className="text-slate-400">{label}</span>
-      <span className={mono ? "font-mono font-semibold" : "font-semibold"}>{value}</span>
+      <span className={mono ? "font-mono font-semibold text-slate-200" : "font-semibold text-slate-200"}>
+        {value}
+      </span>
     </div>
   )
 }

@@ -219,6 +219,50 @@ async function main() {
   const today = await req('GET', '/api/reports/today')
   assert(today.status === 200 && today.data.salesTotal >= 3650, 'Reporte del día consistente')
 
+  // Test Dashboard con Filtros
+  const dashboardAll = await req('GET', '/api/reports/dashboard?mode=all')
+  assert(
+    dashboardAll.status === 200 &&
+      dashboardAll.data.salesTotal >= 3650 &&
+      dashboardAll.data.estimatedProfit >= 0,
+    'Dashboard histórico consolidado con ganancia estimada',
+  )
+
+  const testShiftId = closed.data.shift.id
+  const dashboardShift = await req('GET', `/api/reports/dashboard?shiftId=${testShiftId}`)
+  assert(
+    dashboardShift.status === 200 &&
+      dashboardShift.data.shiftInfo?.id === testShiftId &&
+      dashboardShift.data.salesCount >= 2,
+    'Dashboard filtrado por ID de turno específico',
+  )
+
+  // Test Exportación CSV
+  const csvRes = await fetch(`${BASE}/api/reports/export/csv`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const csvBuf = Buffer.from(await csvRes.arrayBuffer())
+  const csvText = csvBuf.toString('utf-8')
+  const hasBom = csvBuf[0] === 0xef && csvBuf[1] === 0xbb && csvBuf[2] === 0xbf
+  assert(
+    csvRes.status === 200 &&
+      csvRes.headers.get('content-type')?.includes('text/csv') &&
+      hasBom &&
+      csvText.includes('=== VENTAS Y DETALLE DE ITEMS ==='),
+    'Exportación CSV global con UTF-8 BOM y detalle de items',
+  )
+
+  const csvShiftRes = await fetch(`${BASE}/api/reports/export/csv?shiftId=${testShiftId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const csvShiftText = await csvShiftRes.text()
+  assert(
+    csvShiftRes.status === 200 &&
+      csvShiftText.includes('=== INFORMACIÓN DEL TURNO ===') &&
+      csvShiftText.includes(testShiftId),
+    'Exportación CSV de turno específico para arqueo',
+  )
+
   console.log('')
   if (failures === 0) {
     console.log('Todos los tests pasaron exitosamente.')

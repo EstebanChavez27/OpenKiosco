@@ -141,11 +141,20 @@ export interface Sale {
   user?: { fullName: string }
 }
 
-export interface TodayReport {
+export interface DashboardReport {
   salesTotal: number
   salesCount: number
   averageTicket: number
+  estimatedProfit: number
   byMethod: Record<string, { amount: number; count: number }>
+  cashMovements: {
+    cashIn: number
+    cashOut: number
+    count: number
+    items?: CashMovement[]
+  }
+  sales?: Sale[]
+  shiftInfo?: (Shift & { user?: { fullName: string; username: string }; _count?: { sales: number } }) | null
   lowStockCount: number
   lowStock: Product[]
   fiados: { total: number; customers: number }
@@ -156,3 +165,5 @@ export interface TodayReport {
     _count: { sales: number }
   } | null
 }
+
+export type TodayReport = DashboardReport

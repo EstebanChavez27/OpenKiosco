@@ -8,7 +8,7 @@ use std::process::{Child, Command};
 use std::sync::Mutex;
 use std::time::Duration;
 
-use tauri::{Manager, Url};
+use tauri::Manager;
 
 const PORT: u16 = 4820;
 
@@ -176,7 +176,7 @@ fn main() {
 
             #[cfg(debug_assertions)]
             if let Some(win) = app.get_webview_window("main") {
-                let dev_url: Url = "http://localhost:5173".parse().expect("valid dev url");
+                let dev_url: tauri::Url = "http://localhost:5173".parse().expect("valid dev url");
                 let _ = win.navigate(dev_url);
             }
 
@@ -190,7 +190,7 @@ fn main() {
         .expect("error al construir OpenKiosco")
         .run(|app_handle, event| {
             if matches!(event, tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit) {
-                kill_child(app_handle.state::<ServerState>());
+                kill_child(&app_handle.state::<ServerState>());
             }
         });
 }
