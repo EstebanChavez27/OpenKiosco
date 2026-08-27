@@ -195,11 +195,10 @@ npm run desktop:build
 
 ### Paquetes Generados:
 - **Windows:**
-  - Instalador NSIS: `src-tauri/target/release/bundle/nsis/OpenKiosco_0.3.0_x64-setup.exe`
-  - Paquete MSI: `src-tauri/target/release/bundle/msi/OpenKiosco_0.3.0_x64_en-US.msi`
+  - Instalador NSIS: `src-tauri/target/release/bundle/nsis/OpenKiosco_0.3.1_x64-setup.exe`
 - **Linux:**
-  - Paquete Debian/Ubuntu: `src-tauri/target/release/bundle/deb/openkiosco_0.3.0_amd64.deb`
-  - Paquete portable AppImage: `src-tauri/target/release/bundle/appimage/openkiosco_0.3.0_amd64.AppImage`
+  - Paquete Debian/Ubuntu: `src-tauri/target/release/bundle/deb/openkiosco_0.3.1_amd64.deb`
+  - Paquete portable AppImage: `src-tauri/target/release/bundle/appimage/openkiosco_0.3.1_amd64.AppImage`
 
 ---
 
@@ -208,8 +207,8 @@ npm run desktop:build
 El repositorio cuenta con integración continua (`.github/workflows/release.yml`) para compilar releases en la nube automáticamente:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.3.1
+git push origin v0.3.1
 ```
 
 GitHub Actions compilará en paralelo los binarios para Windows y Linux y los adjuntará automáticamente a la sección **Releases** de tu repositorio.
