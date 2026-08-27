@@ -56,7 +56,7 @@
         "startMenuFolder": "OpenKiosco"
       },
       "wix": {
-        "language": ["es-ES", "en-US"]
+        "language": "en-US"
       }
     },
     "linux": {

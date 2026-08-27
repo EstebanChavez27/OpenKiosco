@@ -60,6 +60,11 @@ jobs:
             wget \
             file
 
+      - name: Instalar dependencias del sistema en Windows
+        if: matrix.target == 'windows'
+        run: |
+          choco install wixtoolset -y
+
       - name: Instalar dependencias de Node.js
         run: npm install
 
