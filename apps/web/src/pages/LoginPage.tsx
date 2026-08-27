@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Navigate, useNavigate } from "react-router-dom"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Delete, KeyRound, Lock, ScanLine, Store, Wallet } from "lucide-react"
+import { Delete, Globe, KeyRound, Lock, ScanLine, Store, Wallet } from "lucide-react"
 import { toast } from "sonner"
 import { ApiError, api } from "@/lib/api"
 import type { User } from "@/lib/types"
@@ -134,7 +134,19 @@ export default function LoginPage() {
           <Feature icon={Wallet} title="Pagos mixtos y fiados" desc="Efectivo, tarjeta, QR y cuenta corriente en la misma venta." />
           <Feature icon={Lock} title="Arqueo a ciegas por turno" desc="Controlá la caja sin que el cajero vea lo esperado." />
         </ul>
-        <p className="relative text-[11px] text-slate-600">Open source · v0.1.0</p>
+        <div className="relative flex items-center gap-2 text-xs text-slate-400">
+          <span>GNU AGPLv3</span>
+          <span className="text-slate-600 select-none">·</span>
+          <a
+            href="https://estebanchavez27.github.io/OpenKiosco/"
+            target="_blank"
+            rel="noreferrer noopener"
+            title="Sitio web de OpenKiosco"
+            className="inline-flex items-center text-slate-400 transition-colors hover:text-slate-200"
+          >
+            <Globe className="h-3.5 w-3.5 inline-block" />
+          </a>
+        </div>
       </div>
 
       <div className="flex flex-1 items-center justify-center p-4">
